@@ -369,13 +369,13 @@ public:
 	VarArguments() {}
 	VarArguments(Isolate *isolate, Local<Value> value) {
 		items.resize(1);
-		Value2Variant(isolate, value, items[0]);
+		Value2Variant(isolate, value, items[0], VT_EMPTY);
 	}
 	VarArguments(Isolate *isolate, const FunctionCallbackInfo<Value> &args) {
 		int argcnt = args.Length();
 		items.resize(argcnt);
 		for (int i = 0; i < argcnt; i ++)
-			Value2Variant(isolate, args[argcnt - i - 1], items[i]);
+			Value2Variant(isolate, args[argcnt - i - 1], items[i], VT_EMPTY);
 	}
     inline bool IsDefault() {
         if (items.size() != 1) return false;
