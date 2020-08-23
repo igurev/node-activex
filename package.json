@@ -28,13 +28,16 @@
     "type": "git",
     "url": "git://github.com/durs/node-activex.git"
   },
-  "dependencies": {},
+  "dependencies": {
+    "bindings": "^1.5.0"
+  },
   "devDependencies": {},
   "engines": {
     "node": ">= 8.0.0"
   },
   "scripts": {
-    "test": "mocha test"
+    "test": "mocha test",
+    "event": "node examples/event.js"
   },
   "license": "MIT",
   "main": "index.js",

@@ -25,10 +25,12 @@
 #ifdef NODE_DEBUG
 	#define NODE_DEBUG_PREFIX "### "
 	#define NODE_DEBUG_MSG(msg) { printf(NODE_DEBUG_PREFIX"%s", msg); std::cout << std::endl; }
+	#define NODE_DEBUG_WOUT(msg, arg) { std::wcout << NODE_DEBUG_PREFIX << msg << " [" << arg << "]" << std::endl; }
 	#define NODE_DEBUG_FMT(msg, arg) { std::cout << NODE_DEBUG_PREFIX; printf(msg, arg); std::cout << std::endl; }
 	#define NODE_DEBUG_FMT2(msg, arg, arg2) { std::cout << NODE_DEBUG_PREFIX; printf(msg, arg, arg2); std::cout << std::endl; }
 #else
 	#define NODE_DEBUG_MSG(msg)
+	#define NODE_DEBUG_WOUT(msg, arg)
 	#define NODE_DEBUG_FMT(msg, arg)
 	#define NODE_DEBUG_FMT2(msg, arg, arg2)
 #endif
@@ -482,7 +484,11 @@ public:
 	// IUnknown interface
 	virtual HRESULT __stdcall QueryInterface(REFIID qiid, void **ppvObject) {
 		if (qiid == CLSID_DispObjectImpl) { *ppvObject = this; return S_OK; }
-		return UnknownImpl<IDispatch>::QueryInterface(qiid, ppvObject);
+		HRESULT hrcode = UnknownImpl<IDispatch>::QueryInterface(qiid, ppvObject);
+		if (FAILED(hrcode)) {
+			hrcode = UnknownImpl<IDispatch>::QueryInterface(IID_IDispatch, ppvObject);
+		}
+		return hrcode;
 	}
 
 	// IDispatch interface
