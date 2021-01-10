@@ -5,6 +5,7 @@
 //-------------------------------------------------------------------------------------------------------
 
 #include "stdafx.h"
+#include <atlconv.h>
 #include "disp.h"
 
 Persistent<ObjectTemplate> DispObject::inst_template;
@@ -1175,6 +1176,8 @@ void ConnectionPointObject::NodeInit(const Local<Object> &target, Isolate* isola
     NODE_SET_PROTOTYPE_METHOD(clazz, "advise", NodeAdvise);
     NODE_SET_PROTOTYPE_METHOD(clazz, "unadvise", NodeUnadvise);
 
+	NODE_SET_PROTOTYPE_METHOD(clazz, "getTypeName", NodeGetTypeName);
+
     Local<ObjectTemplate> &inst = clazz->InstanceTemplate();
     inst->SetInternalFieldCount(1);
 
@@ -1252,6 +1255,57 @@ void ConnectionPointObject::NodeUnadvise(const FunctionCallbackInfo<Value> &args
         isolate->ThrowException(DispError(isolate, hrcode));
         return;
     }
+}
+
+void ConnectionPointObject::NodeGetTypeName(const FunctionCallbackInfo<Value>& args) {
+
+	Isolate* isolate = args.GetIsolate();
+	Local<Context> ctx = isolate->GetCurrentContext();
+
+	ConnectionPointObject* self = ConnectionPointObject::Unwrap<ConnectionPointObject>(args.This());
+	if (!self || !self->ptr) {
+		isolate->ThrowException(DispErrorInvalid(isolate));
+		return;
+	}
+	UINT typeindex = 0;
+	CComPtr<ITypeInfo> typeinfo;
+	if FAILED(self->disp->GetTypeInfo(typeindex, LOCALE_USER_DEFAULT, &typeinfo)) {
+		isolate->ThrowException(DispErrorInvalid(isolate));
+		return;
+	}
+
+	CComPtr<ITypeLib> typelib;
+	if FAILED(typeinfo->GetContainingTypeLib(&typelib, &typeindex)) {
+		isolate->ThrowException(DispErrorInvalid(isolate));
+		return;
+	}
+
+	IID conniid;
+	if FAILED(self->ptr->GetConnectionInterface(&conniid)) {
+		isolate->ThrowException(DispErrorInvalid(isolate));
+		return;
+	}
+
+	CComPtr<ITypeInfo> conninfo;
+	if FAILED(typelib->GetTypeInfoOfGuid(conniid, &conninfo)) {
+		isolate->ThrowException(DispErrorInvalid(isolate));
+		return;
+	}
+
+	CComPtr<ITypeLib> connTypeLib;
+	UINT connIndex = 0;
+	if FAILED(conninfo->GetContainingTypeLib(&connTypeLib, &connIndex)) {
+		isolate->ThrowException(DispErrorInvalid(isolate));
+		return;
+	}
+
+	CComBSTR name;
+	if FAILED(connTypeLib->GetDocumentation(connIndex, &name, NULL, NULL, NULL)) {
+		isolate->ThrowException(DispErrorInvalid(isolate));
+		return;
+	}
+
+	args.GetReturnValue().Set(v8str(isolate, (BSTR)name));
 }
 
 //-------------------------------------------------------------------------------------------------------
